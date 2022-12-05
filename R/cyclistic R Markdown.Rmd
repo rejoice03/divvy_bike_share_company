@@ -1,0 +1,211 @@
+---
+title: "cyclistic R markdown"
+output:
+  html_document: default
+date: "2022-11-30"
+---
+
+## install and loading packages
+```{r}
+library(magrittr)
+library(dplyr)
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(readr)
+library(data.table)
+```
+
+## improting .csv files
+```{r}
+trips_2021_01 <- read.csv("./data/202101_divvy_tripdata.csv")
+trips_2021_02 <- read.csv("./data/202102_divvy_tripdata.csv")
+trips_2021_03 <- read.csv("./data/202103_divvy_tripdata.csv")
+trips_2021_04 <- read.csv("./data/202104_divvy_tripdata.csv")
+trips_2021_05 <- read.csv("./data/202105_divvy_tripdata.csv")
+trips_2021_06 <- read.csv("./data/202106_divvy_tripdata.csv")
+trips_2021_07 <- read.csv("./data/202107_divvy_tripdata.csv")
+trips_2021_08 <- read.csv("./data/202108_divvy_tripdata.csv")
+trips_2021_09 <- read.csv("./data/202109_divvy_tripdata.csv")
+trips_2021_10 <- read.csv("./data/202110_divvy_tripdata.csv")
+trips_2021_11 <- read.csv("./data/202111_divvy_tripdata.csv")
+trips_2021_12 <- read.csv("./data/202112_divvy_tripdata.csv")
+```
+
+## Compare column names each of the files
+```{r}
+colnames(trips_2021_01)
+colnames(trips_2021_02)
+colnames(trips_2021_03)
+colnames(trips_2021_04)
+colnames(trips_2021_05)
+colnames(trips_2021_06)
+colnames(trips_2021_07)
+colnames(trips_2021_08)
+colnames(trips_2021_09)
+colnames(trips_2021_10)
+colnames(trips_2021_11)
+colnames(trips_2021_12)
+```
+## Inspect the dataframes and look for incongruencies
+```{r}
+str(trips_2021_01)
+str(trips_2021_02)
+str(trips_2021_03)
+str(trips_2021_04)
+str(trips_2021_05)
+str(trips_2021_06)
+str(trips_2021_07)
+str(trips_2021_08)
+str(trips_2021_09)
+str(trips_2021_10)
+str(trips_2021_11)
+str(trips_2021_12)
+```
+
+## Stack individual data frames into one big data frame
+```{r}
+all_trips <- bind_rows(trips_2021_01, trips_2021_02, trips_2021_03, trips_2021_04,
+                       trips_2021_05, trips_2021_06, trips_2021_07,
+                       trips_2021_08, trips_2021_09, trips_2021_10, trips_2021_11,
+                       trips_2021_12)
+```
+## remove data from environment
+```{r}
+remove(trips_2021_01, trips_2021_02, trips_2021_03, trips_2021_04, trips_2021_05,
+       trips_2021_06, trips_2021_07, trips_2021_08, trips_2021_09, trips_2021_10,
+       trips_2021_11, trips_2021_12)
+```
+## Inspect the new table that has been created
+```{r}
+colnames(all_trips)
+nrow(all_trips)
+dim(all_trips)
+head(all_trips)
+str(all_trips)
+summary(all_trips)
+```
+
+## Remove lat, long, and gender fields
+```{r}
+all_trips <- all_trips%>% 
+  select(-c(start_lat, start_lng, end_lat, end_lng))
+```
+
+## Remove null and blank rows
+```{r}
+all_trips <- all_trips[!(is.na(all_trips$start_station_name) | all_trips$start_station_name=="" 
+                          | is.na(all_trips$start_station_id) | all_trips$start_station_id==""
+                          |is.na(all_trips$end_station_name) | all_trips$end_station_name==""
+                          |is.na(all_trips$end_station_id) | all_trips$end_station_id==""),]
+```
+## change format for started_at and ended_at chr to date format
+```{r}
+all_trips$started_at <-lubridate::ymd_hms(all_trips$started_at)
+all_trips$ended_at <-lubridate::ymd_hms(all_trips$ended_at)
+```
+
+## Add columns that list the date, month and day of each ride
+```{r}
+all_trips$date <- as.Date(all_trips$started_at)
+all_trips$month <- format(as.Date(all_trips$date), "%b")
+all_trips$day <- format(as.Date(all_trips$date), "%d")
+all_trips$day_of_week <- format(as.Date(all_trips$date), "%A")
+```
+## Add a "ride_length" calculation to all_trips (in seconds)
+```{r}
+all_trips$ride_length <- difftime(all_trips$ended_at,all_trips$started_at)
+```
+## Convert "ride_length" from Factor to numeric so we can run calculations on the data
+```{r}
+is.factor(all_trips$ride_length)
+all_trips$ride_length <- as.numeric(as.character(all_trips$ride_length))
+is.numeric(all_trips$ride_length)
+```
+## Remove "bad" data
+```{r}
+all_trips <- all_trips[!(all_trips$start_station_name == "HQ QR" | all_trips$ride_length<0),]
+```
+## Descriptive analysis on ride_length (all figures in seconds)
+```{r}
+mean(all_trips$ride_length)
+median(all_trips$ride_length)
+max(all_trips$ride_length)
+min(all_trips$ride_length)
+```
+
+## You can condense the four lines above to one line using summary() on the specific attribute
+```{r}
+summary(all_trips$ride_length)
+```
+
+## Compare members and casual users
+```{r}
+aggregate(all_trips$ride_length~all_trips$member_casual, FUN = mean)
+aggregate(all_trips$ride_length~all_trips$member_casual, FUN = median)
+aggregate(all_trips$ride_length~all_trips$member_casual, FUN = max)
+aggregate(all_trips$ride_length~all_trips$member_casual, FUN = min)
+```
+
+## See the average ride time by each day for members vs casual users
+```{r}
+aggregate(all_trips$ride_length~all_trips$member_casual + all_trips$day_of_week, FUN = mean)
+```
+
+## the days of the week are out of order. Let's fix that
+```{r}
+all_trips$day_of_week <- ordered(all_trips$day_of_week, levels=c("Sunday", 
+                                                                       "Monday", 
+                                                                       "Tuesday", 
+                                                                       "Wednesday", 
+                                                                       "Thursday", 
+                                                                       "Friday", 
+                                                                       "Saturday"))
+```
+## let's see the weekday show in order
+```{r}
+aggregate(all_trips$ride_length~all_trips$member_casual + all_trips$day_of_week, FUN = mean)
+```
+## analyze ridership data by type and weekday
+```{r}
+all_trips %>%  
+  mutate(weekday = lubridate::wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)
+```
+
+## visualize the number of rides by rider type
+```{r}
+all_trips %>%  
+  mutate(weekday = lubridate::wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday) %>% 
+  ggplot(aes(x=weekday, y = number_of_rides, fill = member_casual))+
+     geom_col(position = "dodge")
+```
+
+## visualization for average duration
+```{r}
+all_trips %>% 
+  mutate(weekday = lubridate::wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday) %>% 
+  ggplot(aes(x = weekday, y = average_duration, fill = member_casual))+
+  geom_col(position = "dodge")
+```
+## create new table of average ride length with column name member_casual, day of week, ride length
+```{r}
+counts <- aggregate(all_trips$ride_length ~ all_trips$member_casual + all_trips$day_of_week, FUN = mean)
+```
+## Create a csv file that we will visualize in Excel, Tableau, or my presentation software
+```{r}
+write.csv(counts, file = 'F:/Rstudio Project/Cyclistic/cyclistic/avg_ride_length.csv')
+write.csv(all_trips, file = 'F:/Rstudio Project/Cyclistic/cyclistic/all_trips.csv')
+```
+
