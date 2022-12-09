@@ -28,7 +28,7 @@ differently?"
 ![Logo](https://github.com/rejoice03/divvy_bike_share_company/blob/main/Tableau/ch_Divvy-bikes+(1).jpg?raw=true)
 ## FINISHED PROJECT
 Here is my finished project: You can view the links to my R code on Github used for 
-analysis [here](https://github.com/rejoice03/divvy_bike_share_company/blob/main/R/cyclistic%20R%20Markdown.Rmd) and the code for SQL [here](https://github.com/rejoice03/divvy_bike_share_company/blob/main/cyclistic%202021.sql).
+analysis [click here](https://github.com/rejoice03/divvy_bike_share_company/blob/main/R/cyclistic%20R%20Markdown.Rmd) and the code for SQL [click here](https://github.com/rejoice03/divvy_bike_share_company/blob/main/cyclistic%202021.sql) and Tableau [click here](https://public.tableau.com/app/profile/rejoice.raju/viz/Cyclistic_16685942444700/Dashboard1).
 
 ## Cyclistic Dashboard
 ![App Screenshot](https://github.com/rejoice03/divvy_bike_share_company/blob/main/Tableau/Dashboard%201%20(2).png?raw=true)
